@@ -3,11 +3,13 @@ package beater
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
+	"github.com/mschneider82/nsqbeat/config"
+
 	"github.com/elastic/beats/libbeat/beat"
 	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/logp"
-	"github.com/mschneider82/nsqbeat/config"
-	"time"
 
 	nsq "github.com/nsqio/go-nsq"
 )
