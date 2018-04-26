@@ -40,7 +40,7 @@ parameters are specific to Nsqbeat:
 ```yaml
 nsqbeat:
     # A list of NSQ Lookup Daemons to connect to
-    lookupdhttpaddrs: ["127.0.01:4161"]
+    lookupdhttpaddrs: ["127.0.0.1:4161"]
     # a Topic to sucscribe to
     topic: "sometopic"
     # The channel name to join

@@ -3,7 +3,7 @@
 ############################# Nsqbeat ######################################
 
 nsqbeat:
-  lookupdhttpaddrs: ["127.0.01:4161"]
+  lookupdhttpaddrs: ["127.0.0.1:4161"]
   topic: "sometopic"
   channel: "testchan"
   maxinflight: 200
