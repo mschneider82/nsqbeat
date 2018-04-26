@@ -1,0 +1,5 @@
+= Nsqbeat Docs
+
+Welcome to the Nsqbeat documentation.
+
+
