@@ -32,6 +32,10 @@ To run Nsqbeat with debugging output enabled, run:
 ./nsqbeat -c nsqbeat.yml -e -d "*"
 ```
 
+### Installing
+
+You can use the [precompiled packages](https://github.com/mschneider82/nsqbeat/releases)
+
 ### Configuring
 
 An example configuration can be found in the file `nsqbeat.yml`. The following
