@@ -96,8 +96,9 @@ func (bt *Nsqbeat) Run(b *beat.Beat) error {
 							t, err = time.Parse(layout, fmt.Sprintf("%v", value))
 							if err != nil {
 								logp.Err("Error putting: ", err)
+							} else {
+								event.Timestamp = t
 							}
-							event.Timestamp = t
 						} else {
 							// if not a timestamp just push the key and value to the event
 							_, err = event.PutValue(key, value)
