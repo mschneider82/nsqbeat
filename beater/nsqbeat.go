@@ -1,9 +1,10 @@
 package beater
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/json-iterator/go"
 
 	"github.com/mschneider82/nsqbeat/config"
 
@@ -14,6 +15,7 @@ import (
 	nsq "github.com/nsqio/go-nsq"
 )
 
+// Nsqbeat struct
 type Nsqbeat struct {
 	done     chan string
 	message  chan string
@@ -22,7 +24,7 @@ type Nsqbeat struct {
 	consumer *nsq.Consumer
 }
 
-// Creates beater
+// New creates a beat
 func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 	c := config.DefaultConfig
 	if err := cfg.Unpack(&c); err != nil {
@@ -48,6 +50,41 @@ func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 	return bt, nil
 }
 
+func (bt *Nsqbeat) createEventWithJSONKeys(jsonData map[string]interface{}) (*beat.Event, error) {
+	event := beat.Event{
+		Fields: common.MapStr{
+			"type": bt.config.Type,
+		},
+	}
+
+	for key, value := range jsonData {
+		// if a json key is @timestamp convert the string to a time object
+		// and set this time to Timestamp
+		if key == "@timestamp" {
+			// currently a correct time format for @timestamp is expected:
+			t, err := time.Parse(bt.config.Timelayout, fmt.Sprintf("%v", value))
+			if err != nil {
+				logp.Err("Error putting: %s", err.Error())
+			} else {
+				event.Timestamp = t
+			}
+		} else {
+			// if not a timestamp just push the key and value to the event
+			_, err := event.PutValue(key, value)
+			if err != nil {
+				return &event, err
+			}
+		}
+	}
+
+	if event.Timestamp.IsZero() {
+		// Set the timestamp to Now() if it wasnt previously set to a value.
+		event.Timestamp = time.Now()
+	}
+	return &event, nil
+}
+
+// Run starts nsq consumer and publishs messages to beat
 func (bt *Nsqbeat) Run(b *beat.Beat) error {
 	logp.Info("nsqbeat is running! Hit CTRL-C to stop it.")
 
@@ -72,58 +109,36 @@ func (bt *Nsqbeat) Run(b *beat.Beat) error {
 		case <-bt.done:
 			return nil
 		case ev := <-bt.message:
-			// Doing the Decoding of k&v if codec is json
-			if bt.config.Codec == "json" {
+		msg:
+			switch bt.config.Codec {
+			case "json":
+				// Doing the Decoding of k&v if codec is json
+				var json = jsoniter.ConfigCompatibleWithStandardLibrary
 				var jsonData map[string]interface{}
-
-				event := beat.Event{
-					Fields: common.MapStr{
-						"type": bt.config.Type,
-					},
-				}
 
 				err := json.Unmarshal([]byte(ev), &jsonData)
 				if err != nil {
 					logp.Err("Error with Json Data: %v", err)
-				} else {
-					for key, value := range jsonData {
-						// if a json key is @timestamp convert the string to a time object
-						// and set this time to Timestamp
-						if key == "@timestamp" {
-							// currently a correct time format for @timestamp is expected:
-							layout := "2006-01-02T15:04:05.000Z"
-							var t time.Time
-							t, err = time.Parse(layout, fmt.Sprintf("%v", value))
-							if err != nil {
-								logp.Err("Error putting: ", err)
-							} else {
-								event.Timestamp = t
-							}
-						} else {
-							// if not a timestamp just push the key and value to the event
-							_, err = event.PutValue(key, value)
-							if err != nil {
-								logp.Err("Error putting: ", err)
-							}
-						}
-					}
-					if err == nil {
-						if event.Timestamp.IsZero() {
-							// Set the timestamp to Now() if it wasnt previously set to a value.
-							event.Timestamp = time.Now()
-						}
-						bt.client.Publish(event)
-						logp.Info("Event send.")
-					}
+					break msg
 				}
-			} else {
+
+				event, err := bt.createEventWithJSONKeys(jsonData)
+				if err != nil {
+					logp.Err("Error putting: %s", err.Error())
+					break msg
+				}
+
+				bt.client.Publish(*event)
+				logp.Info("Event send.")
+
+			default:
 				// just for Plain text events
 				// generate @timestamp by using Now()
 				event := beat.Event{
 					Timestamp: time.Now(),
 					Fields: common.MapStr{
 						"type":    bt.config.Type,
-						"message": string(ev),
+						"message": ev,
 					},
 				}
 				bt.client.Publish(event)
@@ -133,8 +148,12 @@ func (bt *Nsqbeat) Run(b *beat.Beat) error {
 	}
 }
 
+// Stop gracefully shutdown
 func (bt *Nsqbeat) Stop() {
 	bt.consumer.Stop()
-	bt.client.Close()
+	err := bt.client.Close()
+	if err != nil {
+		logp.Err("Error while stopping: %s", err.Error())
+	}
 	close(bt.done)
 }

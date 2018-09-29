@@ -10,6 +10,7 @@ type Config struct {
 	MaxInFlight   int      `config:"maxinflight"`
 	Codec         string   `config:"codec"`
 	Type          string   `config:"type"`
+	Timelayout    string   `config:"timelayout"`
 }
 
 var DefaultConfig = Config{
@@ -19,4 +20,5 @@ var DefaultConfig = Config{
 	MaxInFlight:   200,
 	Codec:         "json",
 	Type:          "nsqbeat",
+	Timelayout:    "2006-01-02T15:04:05.000Z",
 }
