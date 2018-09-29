@@ -34,6 +34,7 @@ before_install:
   - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/mschneider82/nsqbeat/
   - cd $HOME/gopath/src/github.com/mschneider82/nsqbeat/
   - go get -u github.com/nsqio/go-nsq
+  - go get -u github.com/json-iterator/go
   - go get -u github.com/kardianos/govendor
   - go install github.com/kardianos/govendor
 
