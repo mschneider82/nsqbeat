@@ -53,6 +53,8 @@ nsqbeat:
     maxinflight: 200
     # If data in the topic is Json then use the decoder, if not set to something else like plain
     codec: "json"
+    # use Golang time format layout to define if @timestamp exists and has a different format
+    timelayout: "2006-01-02T15:04:05.000Z"
 
 ```
 

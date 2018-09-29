@@ -8,6 +8,7 @@ nsqbeat:
   channel: "testchan"
   maxinflight: 200
   codec: "json" # if not json then the input is copied to "message"
+  timelayout: "2006-01-02T15:04:05.000Z" # use Golang time format layout to define if @timestamp exists and has a different format
 
 #================================ General ======================================
 
